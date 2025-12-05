@@ -11,7 +11,7 @@ class MockSignalRepository : SignalRepository {
     }
 
     override suspend fun getSignalById(id: String): Signal? {
-        delay(500)
-        return MockData.signals.firstOrNull { it.id == id }
+        delay(300)
+        return MockData.signals.find { it.id == id }
     }
 }

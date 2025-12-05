@@ -3,6 +3,7 @@
  * Ne commit jamais un vrai secret ici. Utilise un fichier .env local ou des variables d'environnement.
  */
 
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");

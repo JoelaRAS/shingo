@@ -28,11 +28,6 @@ data class TakeProfit(
     val percentage: Double? = null
 )
 
-@Serializable
-enum class Direction { LONG, SHORT }
-
-@Serializable
-enum class EntryType { LIMIT, MARKET }
-
-@Serializable
-enum class SignalStatus { ACTIVE, EXPIRED }
+@Serializable enum class Direction { LONG, SHORT }
+@Serializable enum class EntryType { LIMIT, MARKET }
+@Serializable enum class SignalStatus { ACTIVE, EXPIRED }

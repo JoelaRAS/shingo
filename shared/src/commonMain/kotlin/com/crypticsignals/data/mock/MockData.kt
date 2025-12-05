@@ -18,10 +18,10 @@ object MockData {
             avatarUrl = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&h=200",
             bio = "BTC Swing Specialist. Low frequency, institutional grade setups.",
             winRate = 87,
-            roi = 420,
             totalSignals = 142,
             activeSubscribers = 1250,
             isUserSubscribed = true,
+            roi = 420,
             price = 49,
             rating = 4.9,
             reviewsCount = 312
@@ -32,10 +32,10 @@ object MockData {
             avatarUrl = "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=200&h=200",
             bio = "On-chain flow analysis. I see what whales do before you do.",
             winRate = 72,
-            roi = 310,
             totalSignals = 310,
             activeSubscribers = 890,
             isUserSubscribed = true,
+            roi = 310,
             price = 99,
             rating = 4.8,
             reviewsCount = 156
@@ -46,10 +46,10 @@ object MockData {
             avatarUrl = "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&h=200",
             bio = "Hunting 100x gems in the micro-cap forest.",
             winRate = 55,
-            roi = 1250,
             totalSignals = 420,
             activeSubscribers = 5000,
             isUserSubscribed = true,
+            roi = 1250,
             price = 35,
             rating = 4.6,
             reviewsCount = 890
@@ -60,10 +60,10 @@ object MockData {
             avatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&h=200",
             bio = "Scalping ETH & Solana. High volatility hunter.",
             winRate = 64,
-            roi = 185,
             totalSignals = 850,
             activeSubscribers = 3400,
             isUserSubscribed = false,
+            roi = 185,
             price = 29,
             rating = 4.5,
             reviewsCount = 1042
@@ -74,10 +74,10 @@ object MockData {
             avatarUrl = "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=200&h=200",
             bio = "Macro trends and cycle analysis. Playing the long game.",
             winRate = 92,
-            roi = 850,
             totalSignals = 45,
             activeSubscribers = 5600,
             isUserSubscribed = false,
+            roi = 850,
             price = 149,
             rating = 5.0,
             reviewsCount = 2400
@@ -88,10 +88,10 @@ object MockData {
             avatarUrl = "https://images.unsplash.com/photo-1633332755192-727a05c4013d?auto=format&fit=crop&w=200&h=200",
             bio = "High risk, high reward. Yield farming and loops.",
             winRate = 45,
-            roi = -12,
             totalSignals = 90,
             activeSubscribers = 200,
             isUserSubscribed = false,
+            roi = -12,
             price = 15,
             rating = 3.2,
             reviewsCount = 45
@@ -102,10 +102,10 @@ object MockData {
             avatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&h=200",
             bio = "Applying traditional forex strategies to crypto markets.",
             winRate = 68,
-            roi = 140,
             totalSignals = 1200,
             activeSubscribers = 850,
             isUserSubscribed = false,
+            roi = 140,
             price = 59,
             rating = 4.1,
             reviewsCount = 120
@@ -116,10 +116,10 @@ object MockData {
             avatarUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&h=200",
             bio = "Algorithmic trading based on sentiment analysis.",
             winRate = 75,
-            roi = 300,
             totalSignals = 5000,
             activeSubscribers = 10000,
             isUserSubscribed = false,
+            roi = 300,
             price = 19,
             rating = 4.3,
             reviewsCount = 3000
@@ -198,73 +198,15 @@ object MockData {
                 direction = Direction.SHORT,
                 entryType = EntryType.MARKET,
                 entryPrice = 145.50,
-                stopLoss = 148.00,
+                stopLoss = 152.0,
                 takeProfits = listOf(
-                    TakeProfit(level = 1, price = 140.00, percentage = 3.78),
-                    TakeProfit(level = 2, price = 135.00, percentage = 7.21)
+                    TakeProfit(1, 140.0, 25),
+                    TakeProfit(2, 130.0, 35),
+                    TakeProfit(3, 120.0, 40)
                 ),
                 timeframe = "H1",
                 confidence = 7,
-                createdAt = now - 30 * 60 * 1000,
-                expiresAt = now + 8 * 60 * 60 * 1000,
-                status = SignalStatus.ACTIVE
-            )
-        )
-        add(
-            Signal(
-                id = "s7",
-                traderId = "t3",
-                pair = "LINK/USDT",
-                direction = Direction.LONG,
-                entryType = EntryType.LIMIT,
-                entryPrice = 18.20,
-                stopLoss = 17.50,
-                takeProfits = listOf(
-                    TakeProfit(level = 1, price = 19.50, percentage = 7.1),
-                    TakeProfit(level = 2, price = 21.00, percentage = 15.3)
-                ),
-                timeframe = "D1",
-                confidence = 9,
                 createdAt = now - 5 * 60 * 60 * 1000,
-                expiresAt = now + 48 * 60 * 60 * 1000,
-                status = SignalStatus.ACTIVE
-            )
-        )
-        add(
-            Signal(
-                id = "s8",
-                traderId = "t5",
-                pair = "PEPE/USDT",
-                direction = Direction.LONG,
-                entryType = EntryType.MARKET,
-                entryPrice = 0.00000850,
-                stopLoss = 0.00000780,
-                takeProfits = listOf(
-                    TakeProfit(level = 1, price = 0.00001000, percentage = 17.6),
-                    TakeProfit(level = 2, price = 0.00001500, percentage = 76.4)
-                ),
-                timeframe = "M15",
-                confidence = 6,
-                createdAt = now - 10 * 60 * 1000,
-                expiresAt = now + 4 * 60 * 60 * 1000,
-                status = SignalStatus.ACTIVE
-            )
-        )
-        add(
-            Signal(
-                id = "s9",
-                traderId = "t5",
-                pair = "WIF/USDT",
-                direction = Direction.SHORT,
-                entryType = EntryType.MARKET,
-                entryPrice = 3.20,
-                stopLoss = 3.50,
-                takeProfits = listOf(
-                    TakeProfit(level = 1, price = 2.80, percentage = 12.5),
-                ),
-                timeframe = "H1",
-                confidence = 5,
-                createdAt = now - 45 * 60 * 1000,
                 expiresAt = now + 6 * 60 * 60 * 1000,
                 status = SignalStatus.ACTIVE
             )
@@ -276,66 +218,51 @@ object MockData {
                 pair = "ETH/USDT",
                 direction = Direction.LONG,
                 entryType = EntryType.MARKET,
-                entryPrice = 3400.0,
-                stopLoss = 3350.0,
+                entryPrice = 3300.0,
+                stopLoss = 3200.0,
                 takeProfits = listOf(
-                    TakeProfit(level = 1, price = 3450.0, percentage = 1.47),
-                    TakeProfit(level = 2, price = 3500.0, percentage = 2.94),
+                    TakeProfit(1, 3400.0, 30),
+                    TakeProfit(2, 3550.0, 30),
+                    TakeProfit(3, 3700.0, 40)
                 ),
-                timeframe = "M15",
-                confidence = 6,
-                createdAt = now - 15 * 60 * 1000,
-                expiresAt = now + 1 * 60 * 60 * 1000,
+                timeframe = "H4",
+                confidence = 8,
+                createdAt = now - 6 * 60 * 60 * 1000,
+                expiresAt = now + 2 * 60 * 60 * 1000,
                 status = SignalStatus.ACTIVE
             )
         )
         add(
             Signal(
-                id = "s10",
-                traderId = "t2",
-                pair = "XRP/USDT",
+                id = "s4",
+                traderId = "t3",
+                pair = "AVAX/USDT",
                 direction = Direction.SHORT,
                 entryType = EntryType.LIMIT,
-                entryPrice = 0.62,
-                stopLoss = 0.63,
+                entryPrice = 44.2,
+                stopLoss = 47.0,
                 takeProfits = listOf(
-                    TakeProfit(level = 1, price = 0.60, percentage = 3.2),
+                    TakeProfit(1, 41.0, 33),
+                    TakeProfit(2, 38.0, 33),
+                    TakeProfit(3, 35.0, 34)
                 ),
                 timeframe = "H1",
-                confidence = 7,
-                createdAt = now - 20 * 60 * 1000,
+                confidence = 6,
+                createdAt = now - 12 * 60 * 60 * 1000,
                 expiresAt = now + 12 * 60 * 60 * 1000,
                 status = SignalStatus.ACTIVE
             )
         )
-        add(
-            Signal(
-                id = "s11",
-                traderId = "t4",
-                pair = "BTC/USDT",
-                direction = Direction.LONG,
-                entryType = EntryType.LIMIT,
-                entryPrice = 58000.0,
-                stopLoss = 55000.0,
-                takeProfits = listOf(
-                    TakeProfit(level = 1, price = 75000.0, percentage = 29.3),
-                    TakeProfit(level = 2, price = 82000.0, percentage = 41.3)
-                ),
-                timeframe = "W1",
-                confidence = 10,
-                createdAt = now - 100 * 60 * 60 * 1000,
-                expiresAt = now + 7 * 24 * 60 * 60 * 1000,
-                status = SignalStatus.ACTIVE
-            )
-        )
-
-        addAll(t1Hist)
-        addAll(t2Hist)
-        addAll(t3Hist)
-        addAll(t4Hist)
-        addAll(t5Hist)
-        addAll(t6Hist)
-        addAll(t7Hist)
-        addAll(t8Hist)
     }
+
+    val traderPerformance = mapOf(
+        "t1" to t1Hist,
+        "t2" to t2Hist,
+        "t3" to t3Hist,
+        "t4" to t4Hist,
+        "t5" to t5Hist,
+        "t6" to t6Hist,
+        "t7" to t7Hist,
+        "t8" to t8Hist
+    )
 }

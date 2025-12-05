@@ -11,7 +11,7 @@ class MockTraderRepository : TraderRepository {
     }
 
     override suspend fun getTraderById(id: String): Trader? {
-        delay(500)
-        return MockData.traders.firstOrNull { it.id == id }
+        delay(300)
+        return MockData.traders.find { it.id == id }
     }
 }
