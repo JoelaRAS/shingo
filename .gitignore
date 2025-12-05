@@ -20,3 +20,7 @@ local.properties
 
 # Ignore sample assets not part of the app
 front exemple/
+
+# Backend local
+backend/node_modules/
+backend/.env
