@@ -7,6 +7,7 @@ import com.crypticsignals.data.model.SignalStatus
 import com.crypticsignals.data.model.TakeProfit
 import com.crypticsignals.data.model.Trader
 import kotlin.random.Random
+import java.util.Locale
 
 object MockData {
     private val now = System.currentTimeMillis()
@@ -153,7 +154,7 @@ object MockData {
                 createdAt = currentTime,
                 expiresAt = currentTime + 1000 * 60 * 60 * 4,
                 status = SignalStatus.EXPIRED,
-                resultPnl = String.format("%.2f", pnl).toDouble()
+                resultPnl = String.format(Locale.US, "%.2f", pnl).toDouble()
             )
         }
         return signals.sortedByDescending { it.createdAt }
@@ -169,6 +170,14 @@ object MockData {
     private val t8Hist = generateHistory("t8", 60, 2.5, 0.75)
 
     val signals = buildList {
+        addAll(t1Hist)
+        addAll(t2Hist)
+        addAll(t3Hist)
+        addAll(t4Hist)
+        addAll(t5Hist)
+        addAll(t6Hist)
+        addAll(t7Hist)
+        addAll(t8Hist)
         add(
             Signal(
                 id = "s1",

@@ -68,6 +68,11 @@ dependencies {
     implementation(libs.coil.compose)
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     implementation(project(":shared"))
+    // Solana Mobile Wallet Adapter (réel)
+    implementation("com.solanamobile:mobile-wallet-adapter-clientlib-ktx:2.1.0")
+    implementation("com.solanamobile:web3-solana:0.2.5")
+    implementation("com.solanamobile:rpc-core:0.2.7")
+    implementation("io.github.funkatronics:multimult:0.2.3")
 
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)

@@ -13,7 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -39,8 +42,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.crypticsignals.BuildConfig
-import androidx.compose.ui.platform.LocalContext
+import com.crypticsignals.wallet.LocalActivityResultSender
+import com.crypticsignals.wallet.SolanaWalletConnector
+import com.crypticsignals.wallet.WalletUiState
+import com.crypticsignals.wallet.WalletViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -54,37 +59,28 @@ import androidx.navigation.navArgument
 import com.crypticsignals.data.mock.MockData
 import com.crypticsignals.data.mock.MockSignalRepository
 import com.crypticsignals.data.mock.MockTraderRepository
-import com.crypticsignals.data.privy.PersistentPrivyClient
-import com.crypticsignals.data.privy.PrivySessionStorage
-import com.crypticsignals.data.privy.MockPrivyRemoteClient
 import com.crypticsignals.ui.components.AuthRequiredScreen
+import com.crypticsignals.ui.screens.feed.ShingoGlyph
 import com.crypticsignals.ui.screens.feed.MyFeedScreen
 import com.crypticsignals.ui.screens.home.HomeScreen
 import com.crypticsignals.ui.screens.profile.ProfileScreen
 import com.crypticsignals.ui.screens.signaldetail.SignalDetailScreen
 import com.crypticsignals.ui.screens.traders.TraderDetailScreen
-import com.crypticsignals.viewmodel.AuthViewModel
+import com.crypticsignals.ui.components.TraderCard
 import com.crypticsignals.viewmodel.ProfileViewModel
-import com.crypticsignals.ui.screens.feed.ShingoGlyph
 import com.crypticsignals.viewmodel.SignalsViewModel
 import com.crypticsignals.viewmodel.TradersViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @Composable
 fun CrypticSignalsApp() {
     val navController = rememberNavController()
     val traderRepository = remember { MockTraderRepository() }
     val signalRepository = remember { MockSignalRepository() }
-    val context = LocalContext.current
-    val privyClient = remember {
-        PersistentPrivyClient(
-            storage = PrivySessionStorage(context),
-            appId = BuildConfig.PRIVY_APP_ID,
-            remote = MockPrivyRemoteClient()
-        )
-    }
-    val authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.provideFactory(privyClient))
-    val authState by authViewModel.uiState.collectAsStateWithLifecycle()
-    LaunchedEffect(Unit) { authViewModel.restore() }
+    val mwaSender = LocalActivityResultSender.current
+    val walletConnector = remember(mwaSender) { mwaSender?.let { SolanaWalletConnector(it) } }
+    val walletViewModel: WalletViewModel? = walletConnector?.let { viewModel(factory = WalletViewModel.provideFactory(it)) }
+    val walletState by (walletViewModel?.uiState ?: MutableStateFlow(WalletUiState())).collectAsStateWithLifecycle()
 
     val navItems = listOf(
         NavItem("home", "Market", Icons.Filled.Store),
@@ -123,15 +119,7 @@ fun CrypticSignalsApp() {
                 composable("feed") {
                     val traderVm: TradersViewModel = viewModel(factory = TradersViewModel.provideFactory(traderRepository))
                     val tradersState by traderVm.uiState.collectAsStateWithLifecycle()
-                    if (!authState.isConnected) {
-                        AuthRequiredScreen(
-                            title = "Connect to view signals",
-                            subtitle = "Sign in with Privy to access your feed.",
-                            isConnecting = authState.isConnecting,
-                            error = authState.error,
-                            onConnect = { authViewModel.connect() }
-                        )
-                    } else {
+                    if (walletState.isConnected) {
                         MyFeedScreen(
                             traders = tradersState.traders,
                             signals = MockData.signals,
@@ -139,6 +127,14 @@ fun CrypticSignalsApp() {
                             onMarketClick = { navController.navigate("home") },
                             onTraderClick = { navController.navigate("trader/$it") },
                             contentPadding = paddingValues
+                        )
+                    } else {
+                        AuthRequiredScreen(
+                            title = "Connect wallet to view signals",
+                            subtitle = "Un wallet Solana (MWA) est requis pour accéder au feed.",
+                            isConnecting = walletState.isConnecting,
+                            error = walletState.errorMessage,
+                            onConnect = { walletViewModel?.connect() }
                         )
                     }
                 }
@@ -155,20 +151,20 @@ fun CrypticSignalsApp() {
                         viewModel.loadSignals(traderId)
                     }
 
-                    if (!authState.isConnected) {
-                        AuthRequiredScreen(
-                            title = "Connect to view trader",
-                            subtitle = "Authenticate with Privy to see this trader’s signals.",
-                            isConnecting = authState.isConnecting,
-                            error = authState.error,
-                            onConnect = { authViewModel.connect() }
-                        )
-                    } else {
+                    if (walletState.isConnected) {
                         TraderDetailScreen(
                             trader = trader,
                             signals = uiState.signals,
                             onSignalClick = { navController.navigate("signal/$it") },
                             onSubscribeClick = { /* mock */ }
+                        )
+                    } else {
+                        AuthRequiredScreen(
+                            title = "Connect wallet pour ce trader",
+                            subtitle = "Connecte un wallet Solana pour voir les détails.",
+                            isConnecting = walletState.isConnecting,
+                            error = walletState.errorMessage,
+                            onConnect = { walletViewModel?.connect() }
                         )
                     }
                 }
@@ -185,39 +181,69 @@ fun CrypticSignalsApp() {
                         viewModel.getSignalById(signalId)
                     }
 
-                    if (!authState.isConnected) {
-                        AuthRequiredScreen(
-                            title = "Connect to view signal",
-                            subtitle = "Sign in with Privy to open this signal.",
-                            isConnecting = authState.isConnecting,
-                            error = authState.error,
-                            onConnect = { authViewModel.connect() }
-                        )
-                    } else {
+                    if (walletState.isConnected) {
                         SignalDetailScreen(signal = signal, trader = trader)
+                    } else {
+                        AuthRequiredScreen(
+                            title = "Connect wallet pour ouvrir le signal",
+                            subtitle = "Wallet Solana requis.",
+                            isConnecting = walletState.isConnecting,
+                            error = walletState.errorMessage,
+                            onConnect = { walletViewModel?.connect() }
+                        )
                     }
                 }
                 composable("profile") {
                     val viewModel: ProfileViewModel = viewModel(factory = ProfileViewModel.provideFactory(signalRepository, traderRepository))
                     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-                    if (!authState.isConnected) {
-                        AuthRequiredScreen(
-                            title = "Connect to view profile",
-                            subtitle = "Connect your wallet with Privy to manage your account.",
-                            isConnecting = authState.isConnecting,
-                            error = authState.error,
-                            onConnect = { authViewModel.connect() }
-                        )
-                    } else {
+                    if (walletState.isConnected) {
                         ProfileScreen(
                             uiState = uiState,
-                            user = authState.user,
+                            walletAddress = walletState.address,
+                            walletViewModel = walletViewModel,
                             onCreateSignal = { draft -> viewModel.createSignal(draft) },
                             onRefresh = { viewModel.refreshActiveSignals() },
-                            onDisconnect = { authViewModel.disconnect() }
+                            onDisconnect = { walletViewModel?.disconnect() },
+                            onViewFollowing = {
+                                navController.navigate("following") {
+                                    launchSingleTop = true
+                                }
+                            },
+                            onViewFollowers = {
+                                navController.navigate("followers") {
+                                    launchSingleTop = true
+                                }
+                            },
+                            onSignalClick = { id -> navController.navigate("signal/$id") }
+                        )
+                    } else {
+                        AuthRequiredScreen(
+                            title = "Connect wallet pour ton profil",
+                            subtitle = "Les infos profil et signaux sont accessibles après connexion.",
+                            isConnecting = walletState.isConnecting,
+                            error = walletState.errorMessage,
+                            onConnect = { walletViewModel?.connect() }
                         )
                     }
+                }
+                composable("followers") {
+                    val traderVm: TradersViewModel = viewModel(factory = TradersViewModel.provideFactory(traderRepository))
+                    val tradersState by traderVm.uiState.collectAsStateWithLifecycle()
+                    TraderListScreen(
+                        title = "Followers",
+                        traders = tradersState.traders,
+                        onTraderClick = { navController.navigate("trader/$it") }
+                    )
+                }
+                composable("following") {
+                    val traderVm: TradersViewModel = viewModel(factory = TradersViewModel.provideFactory(traderRepository))
+                    val tradersState by traderVm.uiState.collectAsStateWithLifecycle()
+                    TraderListScreen(
+                        title = "Following",
+                        traders = tradersState.traders,
+                        onTraderClick = { navController.navigate("trader/$it") }
+                    )
                 }
             }
         }
@@ -228,7 +254,7 @@ fun CrypticSignalsApp() {
 private fun ShingoTopBar(navController: NavHostController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val route = navBackStackEntry?.destination?.route.orEmpty()
-    val isDetail = route.startsWith("trader/") || route.startsWith("signal/")
+    val isDetail = route.startsWith("trader/") || route.startsWith("signal/") || route == "followers" || route == "following"
     Surface(
         color = MaterialTheme.colorScheme.background.copy(alpha = 0.9f),
         tonalElevation = 0.dp,
@@ -243,6 +269,7 @@ private fun ShingoTopBar(navController: NavHostController) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .statusBarsPadding()
                 .padding(horizontal = 18.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
@@ -400,3 +427,32 @@ private fun ShingoBottomBar(
 }
 
 private data class NavItem(val route: String, val label: String, val icon: ImageVector)
+
+@Composable
+private fun TraderListScreen(
+    title: String,
+    traders: List<com.crypticsignals.data.model.Trader>,
+    onTraderClick: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(traders) { trader ->
+                TraderCard(trader = trader, onClick = { onTraderClick(trader.id) })
+            }
+        }
+    }
+}

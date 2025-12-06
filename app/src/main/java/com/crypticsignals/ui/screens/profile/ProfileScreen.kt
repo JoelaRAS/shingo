@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -18,10 +19,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -34,24 +35,29 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.crypticsignals.data.model.Direction
-import com.crypticsignals.data.model.PrivyUser
 import com.crypticsignals.data.model.SignalStatus
 import com.crypticsignals.ui.components.DirectionBadge
 import com.crypticsignals.ui.components.GlassCard
 import com.crypticsignals.ui.components.NeonBadge
+import com.crypticsignals.ui.wallet.WalletConnectSection
+import com.crypticsignals.ui.wallet.shortenAddress
+import com.crypticsignals.wallet.WalletViewModel
 import com.crypticsignals.viewmodel.ProfileUiState
 import com.crypticsignals.viewmodel.SignalDraft
 
@@ -60,11 +66,21 @@ private data class TpInput(var price: String, var percentage: String)
 @Composable
 fun ProfileScreen(
     uiState: ProfileUiState,
-    user: PrivyUser?,
+    walletAddress: String?,
+    walletViewModel: WalletViewModel?,
     onCreateSignal: (SignalDraft) -> Unit,
     onRefresh: () -> Unit,
-    onDisconnect: () -> Unit = {}
+    onDisconnect: () -> Unit = {},
+    onViewFollowing: () -> Unit = {},
+    onViewFollowers: () -> Unit = {},
+    onSignalClick: (String) -> Unit = {}
 ) {
+    if (walletViewModel == null) {
+        Text("Wallet non disponible dans ce contexte", color = Color.White, modifier = Modifier.padding(16.dp))
+        return
+    }
+    val walletState by walletViewModel.uiState.collectAsStateWithLifecycle()
+    val clipboard = LocalClipboardManager.current
     val baseAssets = listOf("BTC", "ETH", "SOL", "BNB", "XRP", "ADA", "AVAX", "LINK", "DOGE")
     val quoteAssets = listOf("USDT", "USDC", "USD", "EUR", "BTC", "ETH")
     val timeframes = listOf("M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1", "MN1")
@@ -79,8 +95,8 @@ fun ProfileScreen(
     var timeframe by remember { mutableStateOf(timeframes[5]) }
     var confidence by remember { mutableStateOf(6f) }
     var formError by remember { mutableStateOf<String?>(null) }
-    val displayName = user?.label ?: "Wallet"
-    val walletAddress = user?.walletAddress ?: "Not connected"
+    val displayName = "Sailor Zero" // mock alias instead of raw address
+    val walletAddressDisplay = walletAddress ?: "Not connected"
 
     Column(
         modifier = Modifier
@@ -103,114 +119,123 @@ fun ProfileScreen(
             }
             Column {
                 Text(displayName, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface)
-                Text(walletAddress, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                Text(
+                    text = walletAddressDisplay,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.clickable(enabled = walletState.isConnected && walletAddress != null) {
+                        walletAddress?.let { clipboard.setText(AnnotatedString(it)) }
+                    }
+                )
             }
         }
 
-        GlassCard {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Wallet", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
-                Text(walletAddress, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
-                user?.chain?.let {
-                    Text(it, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+        if (!walletState.isConnected) {
+            WalletConnectSection(walletViewModel = walletViewModel)
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                GlassCard(modifier = Modifier.weight(1f), onClick = onViewFollowers) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Followers", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                        Text("1.2K", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    }
+                }
+                GlassCard(modifier = Modifier.weight(1f), onClick = onViewFollowing) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Following", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                        Text("12 traders", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    }
                 }
             }
-        }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            GlassCard(modifier = Modifier.weight(1f)) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("12", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                    Text("Following", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                }
-            }
-            GlassCard(
-                modifier = Modifier.weight(1f),
-                onClick = { showCreateForm = true }
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
-                    Text("Create Signal", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
-                }
-            }
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Settings", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), fontWeight = FontWeight.Bold)
-            GlassCard {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                GlassCard(
+                    modifier = Modifier.weight(1f),
+                    onClick = { showCreateForm = true }
                 ) {
-                    Text("Notifications", color = MaterialTheme.colorScheme.onSurface)
-                    Icon(Icons.Filled.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
+                        Text("Créer un signal", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                    }
                 }
-            }
-            GlassCard {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Wallet Connection", color = MaterialTheme.colorScheme.onSurface)
-                    Text(
-                        if (user != null) "Connected via Privy" else "Not Connected",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-            }
-            GlassCard(onClick = onDisconnect) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Disconnect", color = MaterialTheme.colorScheme.onSurface)
-                    Icon(Icons.Outlined.Close, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                }
-            }
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Active Signals", color = Color.White.copy(alpha = 0.7f), fontWeight = FontWeight.Bold)
-            if (uiState.activeSignals.isEmpty()) {
-                GlassCard {
+                GlassCard(modifier = Modifier.weight(1f)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.WifiOff, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                            Text("No active signals", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
-                        }
-                        TextButton(onClick = onRefresh) {
-                            Text("Refresh")
-                        }
+                        Text("Notifications", color = MaterialTheme.colorScheme.onSurface)
+                        var notifEnabled by remember { mutableStateOf(true) }
+                        Switch(checked = notifEnabled, onCheckedChange = { notifEnabled = it })
                     }
                 }
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    uiState.activeSignals.take(4).forEach { signal ->
-                        GlassCard {
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text(signal.pair, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
-                                        Text(signal.timeframe, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                                    }
-                                    if (signal.status == SignalStatus.ACTIVE) {
-                                        NeonBadge(text = "LIVE", color = Color(0xFF10B981))
-                                    } else {
-                                        NeonBadge(text = signal.status.name, color = Color.Gray)
+            }
+
+            Button(
+                onClick = onDisconnect,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFef4444))
+            ) {
+                Text("Déconnecter le wallet", fontWeight = FontWeight.Bold, color = Color.White)
+            }
+
+            // Active signals block (scrollable area)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Mes signaux publiés", color = Color.White.copy(alpha = 0.7f), fontWeight = FontWeight.Bold)
+                val activeSignals = uiState.activeSignals.filter { it.status == SignalStatus.ACTIVE }
+                if (activeSignals.isEmpty()) {
+                    GlassCard {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Filled.WifiOff, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                Text("Aucun signal publié", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                            }
+                            TextButton(onClick = onRefresh) {
+                                Text("Refresh")
+                            }
+                        }
+                    }
+                } else {
+                    GlassCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 180.dp, max = 320.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            activeSignals.forEach { signal ->
+                                GlassCard(onClick = { onSignalClick(signal.id) }) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column {
+                                                Text(signal.pair, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                                                Text(signal.timeframe, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                            }
+                                            NeonBadge(text = "LIVE", color = Color(0xFF10B981))
+                                        }
+                                        DirectionBadge(direction = signal.direction)
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text("Entrée ${signal.entryPrice}", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                                            Text("SL ${signal.stopLoss}", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                                        }
                                     }
                                 }
-                                DirectionBadge(direction = signal.direction)
                             }
                         }
                     }
@@ -223,160 +248,162 @@ fun ProfileScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.75f)),
+                .background(Color.Black.copy(alpha = 0.55f)),
             contentAlignment = Alignment.Center
         ) {
-            Column(
+            GlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(18.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color(0xFF11131C))
-                    .padding(18.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("New Signal", color = Color.White, fontWeight = FontWeight.Bold)
-                    IconButton(onClick = { showCreateForm = false }) {
-                        Icon(Icons.Outlined.Close, contentDescription = null, tint = Color.White)
-                    }
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                    DropdownField(
-                        label = "Base",
-                        options = baseAssets,
-                        selected = baseAsset,
-                        onSelected = { baseAsset = it },
-                        modifier = Modifier.weight(1f)
-                    )
-                    DropdownField(
-                        label = "Quote",
-                        options = quoteAssets,
-                        selected = quoteAsset,
-                        onSelected = { quoteAsset = it },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Action", color = Color.White.copy(alpha = 0.7f))
-                    Spacer(modifier = Modifier.weight(1f))
-                    Box(modifier = Modifier.clickable {
-                        direction = if (direction == Direction.LONG) Direction.SHORT else Direction.LONG
-                    }) {
-                        DirectionBadge(direction = direction)
-                    }
-                }
-
-                OutlinedTextField(
-                    value = entry,
-                    onValueChange = { entry = it },
-                    label = { Text("Entry Price") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = stopLoss,
-                    onValueChange = { stopLoss = it },
-                    label = { Text("Stop Loss (required)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                DropdownField(
-                    label = "Timeframe",
-                    options = timeframes,
-                    selected = timeframe,
-                    onSelected = { timeframe = it },
-                    modifier = Modifier.weight(1f)
-                )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Confidence ${confidence.toInt()}/10", color = Color.White.copy(alpha = 0.7f))
-                        Slider(
-                            value = confidence,
-                            onValueChange = { confidence = it },
-                            valueRange = 1f..10f,
-                            colors = androidx.compose.material3.SliderDefaults.colors(
-                                thumbColor = Color(0xFF6366F1),
-                                activeTrackColor = Color(0xFF6366F1)
-                            )
-                        )
-                    }
-                }
-
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Take Profits", color = Color.White.copy(alpha = 0.7f))
-                        TextButton(onClick = { takeProfits.add(TpInput("", "")) }) { Text("+ Add") }
+                        Text("Créer un signal", color = Color.White, fontWeight = FontWeight.Bold)
+                        IconButton(onClick = { showCreateForm = false }) {
+                            Icon(Icons.Outlined.Close, contentDescription = null, tint = Color.White)
+                        }
                     }
-                    takeProfits.forEachIndexed { index, tp ->
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                        DropdownField(
+                            label = "Base",
+                            options = baseAssets,
+                            selected = baseAsset,
+                            onSelected = { baseAsset = it },
+                            modifier = Modifier.weight(1f)
+                        )
+                        DropdownField(
+                            label = "Quote",
+                            options = quoteAssets,
+                            selected = quoteAsset,
+                            onSelected = { quoteAsset = it },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Action", color = Color.White.copy(alpha = 0.7f))
+                        Spacer(modifier = Modifier.weight(1f))
+                        Box(modifier = Modifier.clickable {
+                            direction = if (direction == Direction.LONG) Direction.SHORT else Direction.LONG
+                        }) {
+                            DirectionBadge(direction = direction)
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = entry,
+                        onValueChange = { entry = it },
+                        label = { Text("Entry Price") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = stopLoss,
+                        onValueChange = { stopLoss = it },
+                        label = { Text("Stop Loss (required)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        DropdownField(
+                            label = "Timeframe",
+                            options = timeframes,
+                            selected = timeframe,
+                            onSelected = { timeframe = it },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Confidence ${confidence.toInt()}/10", color = Color.White.copy(alpha = 0.7f))
+                            Slider(
+                                value = confidence,
+                                onValueChange = { confidence = it },
+                                valueRange = 1f..10f,
+                                colors = androidx.compose.material3.SliderDefaults.colors(
+                                    thumbColor = Color(0xFF6366F1),
+                                    activeTrackColor = Color(0xFF6366F1)
+                                )
+                            )
+                        }
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            OutlinedTextField(
-                                value = tp.price,
-                                onValueChange = { takeProfits[index] = tp.copy(price = it) },
-                                label = { Text("TP${index + 1} Price") },
-                                modifier = Modifier.weight(1f),
-                                singleLine = true
-                            )
-                            OutlinedTextField(
-                                value = tp.percentage,
-                                onValueChange = { takeProfits[index] = tp.copy(percentage = it) },
-                                label = { Text("%") },
-                                modifier = Modifier.width(90.dp),
-                                singleLine = true
-                            )
-                            if (takeProfits.size > 1) {
-                                IconButton(onClick = { takeProfits.removeAt(index) }) {
-                                    Icon(Icons.Outlined.Delete, contentDescription = null, tint = Color.White.copy(alpha = 0.7f))
+                            Text("Take Profits", color = Color.White.copy(alpha = 0.7f))
+                            TextButton(onClick = { takeProfits.add(TpInput("", "")) }) { Text("+ Add") }
+                        }
+                        takeProfits.forEachIndexed { index, tp ->
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                OutlinedTextField(
+                                    value = tp.price,
+                                    onValueChange = { takeProfits[index] = tp.copy(price = it) },
+                                    label = { Text("TP${index + 1} Price") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true
+                                )
+                                OutlinedTextField(
+                                    value = tp.percentage,
+                                    onValueChange = { takeProfits[index] = tp.copy(percentage = it) },
+                                    label = { Text("%") },
+                                    modifier = Modifier.width(90.dp),
+                                    singleLine = true
+                                )
+                                if (takeProfits.size > 1) {
+                                    IconButton(onClick = { takeProfits.removeAt(index) }) {
+                                        Icon(Icons.Outlined.Delete, contentDescription = null, tint = Color.White.copy(alpha = 0.7f))
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                formError?.let { Text(it, color = Color(0xFFef4444)) }
+                    formError?.let { Text(it, color = Color(0xFFef4444)) }
 
-                Button(
-                    onClick = {
-                        val entryD = entry.toDoubleOrNull()
-                        val stopD = stopLoss.toDoubleOrNull()
-                        if (entryD == null || stopD == null) {
-                            formError = "Entry and Stop Loss are required."
-                            return@Button
-                        }
-                        val tps = takeProfits.mapNotNull { it.price.toDoubleOrNull() }
-                        formError = null
-                        onCreateSignal(
-                            SignalDraft(
-                                pair = "$baseAsset/$quoteAsset",
-                                direction = direction,
-                                entryPrice = entryD,
-                                stopLoss = stopD,
-                                tpPrices = tps,
-                                timeframe = timeframe,
-                        confidence = confidence.toInt()
+                    Button(
+                        onClick = {
+                            val entryD = entry.toDoubleOrNull()
+                            val stopD = stopLoss.toDoubleOrNull()
+                            if (entryD == null || stopD == null) {
+                                formError = "Entry and Stop Loss are required."
+                                return@Button
+                            }
+                            val tps = takeProfits.mapNotNull { it.price.toDoubleOrNull() }
+                            formError = null
+                            onCreateSignal(
+                                SignalDraft(
+                                    pair = "$baseAsset/$quoteAsset",
+                                    direction = direction,
+                                    entryPrice = entryD,
+                                    stopLoss = stopD,
+                                    tpPrices = tps,
+                                    timeframe = timeframe,
+                                    confidence = confidence.toInt()
+                                )
                             )
-                        )
-                        showCreateForm = false
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1))
-                ) {
-                    Text("Publish Signal", fontWeight = FontWeight.Bold, color = Color.White)
+                            showCreateForm = false
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1))
+                    ) {
+                        Text("Publier", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
                 }
             }
         }

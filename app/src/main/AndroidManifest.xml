@@ -4,6 +4,19 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Allow discovery of MWA-compatible wallets -->
+    <queries>
+        <intent>
+            <action android:name="com.solanamobile.wallet.ACTION_WALLET_BIND" />
+        </intent>
+        <intent>
+            <action android:name="com.solanamobile.wallet.ACTION_WALLET_CONNECT" />
+        </intent>
+        <intent>
+            <action android:name="com.solanamobile.wallet.ACTION_WALLET_REQUEST" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -25,4 +38,16 @@
         </activity>
     </application>
 
+    <!-- Allow discovery of MWA-compatible wallets -->
+    <queries>
+        <intent>
+            <action android:name="com.solanamobile.wallet.ACTION_WALLET_BIND" />
+        </intent>
+        <intent>
+            <action android:name="com.solanamobile.wallet.ACTION_WALLET_CONNECT" />
+        </intent>
+        <intent>
+            <action android:name="com.solanamobile.wallet.ACTION_WALLET_REQUEST" />
+        </intent>
+    </queries>
 </manifest>
