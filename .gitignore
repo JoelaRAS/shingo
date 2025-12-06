@@ -29,3 +29,6 @@ backend/.env
 .kotlin/
 .kotlin/metadata/
 .kotlin/metadata/kotlinTransformedMetadataLibraries/
+
+# Extracted third-party sources (not needed in repo)
+com/
