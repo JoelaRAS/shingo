@@ -24,3 +24,8 @@ front exemple/
 # Backend local
 backend/node_modules/
 backend/.env
+
+# Kotlin/IDE build caches
+.kotlin/
+.kotlin/metadata/
+.kotlin/metadata/kotlinTransformedMetadataLibraries/
