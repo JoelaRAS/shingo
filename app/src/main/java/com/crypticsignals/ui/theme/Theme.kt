@@ -9,12 +9,12 @@ import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryBlue,
-    secondary = PrimaryBlue,
-    tertiary = PrimaryBlue,
+    secondary = AccentCyan,
+    tertiary = AccentPurple,
     background = DarkBackground,
     surface = DarkSurface,
     surfaceVariant = CardSurface,
-    onPrimary = Color.Black,
+    onPrimary = Color.White,
     onSecondary = Color.Black,
     onBackground = Color.White,
     onSurface = Color.White,

@@ -22,19 +22,19 @@ fun TagChip(
     text: String,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
-    color: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+    color: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
     contentColor: Color = MaterialTheme.colorScheme.onBackground
 ) {
     Surface(
         modifier = modifier,
         color = Color.Transparent,
-        shape = RoundedCornerShape(50),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.6f))
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.35f))
     ) {
         Row(
             modifier = Modifier
-                .background(color.copy(alpha = 0.1f))
-                .padding(horizontal = 10.dp, vertical = 6.dp),
+                .background(color.copy(alpha = 0.18f))
+                .padding(horizontal = 12.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

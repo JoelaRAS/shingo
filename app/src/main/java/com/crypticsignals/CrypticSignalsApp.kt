@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.GenericShape
@@ -60,17 +61,19 @@ import com.crypticsignals.data.mock.MockData
 import com.crypticsignals.data.mock.MockSignalRepository
 import com.crypticsignals.data.mock.MockTraderRepository
 import com.crypticsignals.ui.components.AuthRequiredScreen
+import com.crypticsignals.ui.components.GlassCard
+import com.crypticsignals.ui.components.TagChip
 import com.crypticsignals.ui.screens.feed.ShingoGlyph
 import com.crypticsignals.ui.screens.feed.MyFeedScreen
 import com.crypticsignals.ui.screens.home.HomeScreen
 import com.crypticsignals.ui.screens.profile.ProfileScreen
 import com.crypticsignals.ui.screens.signaldetail.SignalDetailScreen
 import com.crypticsignals.ui.screens.traders.TraderDetailScreen
-import com.crypticsignals.ui.components.TraderCard
 import com.crypticsignals.viewmodel.ProfileViewModel
 import com.crypticsignals.viewmodel.SignalsViewModel
 import com.crypticsignals.viewmodel.TradersViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import coil.compose.AsyncImage
 
 @Composable
 fun CrypticSignalsApp() {
@@ -255,6 +258,11 @@ private fun ShingoTopBar(navController: NavHostController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val route = navBackStackEntry?.destination?.route.orEmpty()
     val isDetail = route.startsWith("trader/") || route.startsWith("signal/") || route == "followers" || route == "following"
+    val detailTitle = when {
+        route == "followers" -> "Followers"
+        route == "following" -> "Following"
+        else -> null
+    }
     Surface(
         color = MaterialTheme.colorScheme.background.copy(alpha = 0.9f),
         tonalElevation = 0.dp,
@@ -281,6 +289,13 @@ private fun ShingoTopBar(navController: NavHostController) {
                             imageVector = Icons.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = Color.White
+                        )
+                    }
+                    detailTitle?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 } else {
@@ -434,24 +449,67 @@ private fun TraderListScreen(
     traders: List<com.crypticsignals.data.model.Trader>,
     onTraderClick: (String) -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .statusBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+    if (traders.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Aucune entrée pour l'instant.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        }
+    } else {
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp + 80.dp)
         ) {
             items(traders) { trader ->
-                TraderCard(trader = trader, onClick = { onTraderClick(trader.id) })
+                GlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onTraderClick(trader.id) }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        AsyncImage(
+                            model = trader.avatarUrl,
+                            contentDescription = trader.name,
+                            modifier = Modifier
+                                .width(56.dp)
+                                .height(56.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        )
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = trader.name,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1
+                            )
+                            Text(
+                                text = trader.bio,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                maxLines = 2
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                TagChip(text = "${trader.winRate}% WR")
+                                TagChip(text = "${trader.totalSignals} calls")
+                            }
+                        }
+                    }
+                }
             }
         }
     }

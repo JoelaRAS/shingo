@@ -28,11 +28,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.crypticsignals.data.model.Direction
 import com.crypticsignals.data.model.SignalStatus
 import com.crypticsignals.ui.theme.LongGreen
 import com.crypticsignals.ui.theme.PrimaryBlue
+import com.crypticsignals.ui.theme.GlassSurface
 import com.crypticsignals.ui.theme.ShortRed
 
 @Composable
@@ -41,22 +43,23 @@ fun GlassCard(
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
+    val shape = RoundedCornerShape(16.dp)
     Surface(
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
+            .clip(shape)
             .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.4f),
+        color = GlassSurface,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
         )
     ) {
         Box(
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-                .padding(14.dp)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.4f))
+                .padding(16.dp)
         ) {
             content()
         }
@@ -83,7 +86,7 @@ fun NeonBadge(
 @Composable
 fun StatusBadge(status: SignalStatus) {
     val isExpired = status == SignalStatus.EXPIRED
-    val color = if (isExpired) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else PrimaryBlue
+    val color = if (isExpired) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f) else PrimaryBlue
     val icon: ImageVector = if (isExpired) Icons.Outlined.LockOpen else Icons.Outlined.Lock
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -112,9 +115,9 @@ fun DirectionBadge(direction: Direction) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(color.copy(alpha = 0.08f))
-            .padding(horizontal = 10.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(color.copy(alpha = 0.12f))
+            .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
         Icon(icon, contentDescription = null, tint = color)
         Text(
